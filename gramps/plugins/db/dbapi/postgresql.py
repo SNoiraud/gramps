@@ -39,7 +39,9 @@ import re
 #-------------------------------------------------------------------------
 from gramps.plugins.db.dbapi.dbapi import DBAPI
 from gramps.gen.utils.configmanager import ConfigManager
+from gramps.gen.config import config
 from gramps.gen.db.dbconst import ARRAYSIZE
+from gramps.gen.db.exceptions import DbConnectionError
 from gramps.gen.const import GRAMPS_LOCALE as glocale
 _ = glocale.translation.gettext
 
@@ -67,18 +69,33 @@ class PostgreSQL(DBAPI):
     def _initialize(self, directory):
         config_file = os.path.join(directory, 'settings.ini')
         config_mgr = ConfigManager(config_file)
-        config_mgr.register('database.dbname', 'gramps')
-        config_mgr.register('database.host', 'localhost')
-        config_mgr.register('database.user', 'user')
-        config_mgr.register('database.password', 'password')
-        config_mgr.register('database.port', 'port')
+        config_mgr.register('database.dbname', '')
+        config_mgr.register('database.host', '')
+        config_mgr.register('database.user', '')
+        config_mgr.register('database.password', '')
+        config_mgr.register('database.port', '')
+
+        if not os.path.exists(config_file):
+            name_file = os.path.join(directory, 'name.txt')
+            with open(name_file, 'r', encoding='utf8') as file:
+                dbname = file.readline().strip()
+            config_mgr.set('database.dbname', dbname)
+            config_mgr.set('database.host', config.get('database.host'))
+            config_mgr.set('database.user', config.get('database.user'))
+            config_mgr.set('database.password', config.get('database.password'))
+            config_mgr.set('database.port', config.get('database.port'))
+            config_mgr.save()
+
         config_mgr.load()
 
         dbkwargs = {}
         for key in config_mgr.get_section_settings('database'):
             dbkwargs[key] = config_mgr.get('database.' + key)
 
-        self.dbapi = Connection(**dbkwargs)
+        try:
+            self.dbapi = Connection(**dbkwargs)
+        except psycopg2.OperationalError as msg:
+            raise DbConnectionError(str(msg), config_file)
 
 
 #-------------------------------------------------------------------------
