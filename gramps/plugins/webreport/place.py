@@ -304,6 +304,7 @@ class PlacePages(BasePage):
         self.placemappages = self.report.options['placemappages']
         self.mapservice = self.report.options['mapservice']
         self.googlemapkey = self.report.options['googlemapkey']
+        self.stamenopts = self.report.options['stamenopts']
 
         # begin PlaceDetail Division
         with Html("div", class_="content", id="PlaceDetail") as placedetail:
@@ -373,7 +374,7 @@ class PlacePages(BasePage):
                             src_js += "&key=" + self.googlemapkey
                         head += Html("script", type="text/javascript",
                                      src=src_js, inline=True)
-                    else:
+                    else: # OpenStreetMap, Stamen...
                         url = self.secure_mode
                         url += ("maxcdn.bootstrapcdn.com/bootstrap/3.3.7/"
                                 "css/bootstrap.min.css")
@@ -420,18 +421,25 @@ class PlacePages(BasePage):
                                                   latitude, longitude,
                                                   10)
 
-                        else:
-                            # OpenStreetMap (OSM) adds Longitude/ Latitude
-                            # to its maps, and needs a country code in
-                            # lowercase letters...
+                        elif self.mapservice == "OpenStreetMap":
                             with Html("script", type="text/javascript") as jsc:
                                 canvas += jsc
-                                #param1 = xml_lang()[3:5].lower()
                                 jsc += MARKER_PATH % marker_path
                                 jsc += OSM_MARKERS % ([[float(longitude),
                                                         float(latitude),
                                                         placetitle]],
                                                       longitude, latitude, 10)
+                                jsc += OPENLAYER
+                        else: # STAMEN
+                            with Html("script", type="text/javascript") as jsc:
+                                canvas += jsc
+                                jsc += MARKER_PATH % marker_path
+                                jsc += STAMEN_MARKERS % ([[float(longitude),
+                                                        float(latitude),
+                                                        placetitle]],
+                                                      self.stamenopts,
+                                                      longitude, latitude, 10)
+                                jsc += OPENLAYER
 
             # add javascript function call to body element
             body.attr += ' onload = "initialize();" '

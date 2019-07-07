@@ -233,6 +233,7 @@ class NavWebReport(Report):
         self.mapservice = self.options['mapservice']
         self.googleopts = self.options['googleopts']
         self.googlemapkey = self.options['googlemapkey']
+        self.stamenopts = self.options['stamenopts']
         self.reference_sort = self.options['reference_sort']
 
         if self.use_home:
@@ -2046,6 +2047,7 @@ class NavWebOptions(MenuReportOptions):
 
         mapopts = [
             [_("OpenStreetMap"), "OpenStreetMap"],
+            [_("StamenMap"), "StamenMap"],
             [_("Google"), "Google"]]
         self.__mapservice = EnumeratedListOption(_("Map Service"),
                                                  mapopts[0][1])
@@ -2091,6 +2093,19 @@ class NavWebOptions(MenuReportOptions):
         self.__googlemapkey = StringOption(_("Google maps API key"), "")
         self.__googlemapkey.set_help(_("The API key used for the Google maps"))
         addopt("googlemapkey", self.__googlemapkey)
+
+        stamenopts = [
+            (_("Toner"), "toner"),
+            (_("Terrain"), "terrain"),
+            (_("WaterColor"), "watercolor")]
+        self.__stamenopts = EnumeratedListOption(_("Stamen Option"),
+                                                 stamenopts[0][1])
+        for trans, opt in stamenopts:
+            self.__stamenopts.add_item(opt, trans)
+        self.__stamenopts.set_help(
+            _("Select which option that you would like "
+              "to have for the Stamenmap Map pages..."))
+        addopt("stamenopts", self.__stamenopts)
 
         self.__placemap_options()
 
@@ -2275,6 +2290,11 @@ class NavWebOptions(MenuReportOptions):
             self.__mapservice.set_available(True)
         else:
             self.__mapservice.set_available(False)
+
+        if mapservice_opts == "StamenMap":
+            self.__stamenopts.set_available(True)
+        else:
+            self.__stamenopts.set_available(False)
 
         if family_active and mapservice_opts == "Google":
             self.__googleopts.set_available(True)
