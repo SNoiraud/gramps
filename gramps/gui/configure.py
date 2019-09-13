@@ -690,7 +690,7 @@ class GrampsPreferences(ConfigureDialog):
         hbox.pack_start(lwidget, False, False, 0)
         hbox.pack_start(self.color_scheme_box, False, False, 0)
 
-        restore_btn = Gtk.Button(_('Restore to defaults'))
+        restore_btn = Gtk.Button(label=_('Restore to defaults'))
         restore_btn.set_tooltip_text(
             _('Restore colors for current theme to default.'))
         restore_btn.connect('clicked', self.restore_colors)
@@ -1828,12 +1828,10 @@ class GrampsPreferences(ConfigureDialog):
         Show dialog to choose media directory.
         """
         f = Gtk.FileChooserDialog(title=_("Select media directory"),
-                                  parent=self.window,
-                                  action=Gtk.FileChooserAction.SELECT_FOLDER,
-                                  buttons=(_('_Cancel'),
-                                           Gtk.ResponseType.CANCEL,
-                                           _('_Apply'),
-                                           Gtk.ResponseType.OK))
+                                  transient_for=self.window,
+                                  action=Gtk.FileChooserAction.SELECT_FOLDER)
+        f.add_buttons(_('_Cancel'), Gtk.ResponseType.CANCEL,
+                      _('_Apply'),  Gtk.ResponseType.OK)
         mpath = media_path(self.dbstate.db)
         f.set_current_folder(os.path.dirname(mpath))
 
@@ -1878,12 +1876,10 @@ class GrampsPreferences(ConfigureDialog):
         Show dialog to choose backup directory.
         """
         f = Gtk.FileChooserDialog(title=_("Select backup directory"),
-                                  parent=self.window,
-                                  action=Gtk.FileChooserAction.SELECT_FOLDER,
-                                  buttons=(_('_Cancel'),
-                                           Gtk.ResponseType.CANCEL,
-                                           _('_Apply'),
-                                           Gtk.ResponseType.OK))
+                                  transient_for=self.window,
+                                  action=Gtk.FileChooserAction.SELECT_FOLDER)
+        f.add_buttons(_('_Cancel'), Gtk.ResponseType.CANCEL,
+                      _('_Apply'),  Gtk.ResponseType.OK)
         backup_path = config.get('database.backup-path')
         if not backup_path:
             backup_path = config.get('database.path')
