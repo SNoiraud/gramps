@@ -214,7 +214,6 @@ class GeoMoves(GeoGraphyView):
         self.place_list = []
         self.place_without_coordinates = []
         self.minlat = self.maxlat = self.minlon = self.maxlon = 0.0
-        self.started = False
         self.minyear = 9999
         self.maxyear = 0
         self.nbplaces = 0
@@ -249,7 +248,7 @@ class GeoMoves(GeoGraphyView):
     def get_viewtype_stock(self):
         """Type of view in category
         """
-        return 'geo-show-family'
+        return 'geo-show-family-down'
 
     def additional_ui(self):
         """
@@ -269,8 +268,6 @@ class GeoMoves(GeoGraphyView):
         """
         Rebuild the tree with the given family handle as reference.
         """
-        if not self.started:
-            self.started = True
         self.place_list_active = []
         self.place_list_ref = []
         self.sort = []
@@ -278,6 +275,10 @@ class GeoMoves(GeoGraphyView):
         self.remove_all_markers()
         self.lifeway_layer.clear_ways()
         self.date_layer.clear_dates()
+        self.message_layer.clear_messages()
+        self.message_layer.set_font_attributes(None, None, None)
+        self.places_found = []
+        self.place_without_coordinates = []
         active = self.get_active()
         if active:
             person = self.dbstate.db.get_person_from_handle(active)
@@ -290,17 +291,7 @@ class GeoMoves(GeoGraphyView):
         all handling of visibility is now in rebuild_trees, see that for more
         information.
         """
-        self.place_list_active = []
-        self.place_list_ref = []
-        self.sort = []
-        self.places_found = []
-        self.place_without_coordinates = []
-        self.remove_all_gps()
-        self.remove_all_markers()
-        self.lifeway_layer.clear_ways()
-        self.date_layer.clear_dates()
-        self.message_layer.clear_messages()
-        self.message_layer.set_font_attributes(None, None, None)
+        pass
 
     def draw(self, menu, marks, color):
         """
@@ -330,6 +321,8 @@ class GeoMoves(GeoGraphyView):
         Create all markers for each people's event in the database which has
         a lat/lon.
         """
+        if self.stop: # no more database. stop to work
+            return
         self.place_list = []
         dbstate = self.dbstate
         if person is not None:
@@ -456,6 +449,8 @@ class GeoMoves(GeoGraphyView):
         """
         Create all markers for one family : all event's places with a lat/lon.
         """
+        if self.stop: # no more database. stop to work
+            return
         dbstate = self.dbstate
         person = None
         try:
@@ -505,6 +500,8 @@ class GeoMoves(GeoGraphyView):
         """
         if maximum generation is not reached, show next level.
         """
+        if self.stop: # no more database. stop to work
+            return
         if level < curlevel:
             return
         self._prepare_for_one_family(family, level, curlevel+1)
@@ -521,7 +518,11 @@ class GeoMoves(GeoGraphyView):
         except:
             self.markers_by_level[curlevel] = []
             self.markers_by_level[curlevel].append(person)
+        if self.stop: # no more database. stop to work
+            return
         for family in person.get_family_handle_list():
+            if self.stop: # no more database. stop to work
+                return
             fam = self.dbstate.db.get_family_from_handle(family)
             self._createmap_for_one_level(fam, level, curlevel)
             if person not in self.markers_by_level[curlevel]:
@@ -563,6 +564,8 @@ class GeoMoves(GeoGraphyView):
         """
         Animate all moves for one generation.
         """
+        if self.stop: # no more database. stop to work
+            return
         self.markers_by_level = dict()
         self._createmap_for_next_level(person, index, 0)
         try:
@@ -628,8 +631,6 @@ class GeoMoves(GeoGraphyView):
             # process next generation in a few milliseconds
             GLib.timeout_add(int(time_to_wait), self.animate_moves,
                                               index+1, person, color)
-        else:
-            self.started = False
         return False
 
     def bubble_message(self, event, lat, lon, marks):

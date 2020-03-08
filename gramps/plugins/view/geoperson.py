@@ -276,17 +276,15 @@ class GeoPerson(GeoGraphyView):
         all handling of visibility is now in rebuild_trees, see that for more
         information.
         """
-        if not self.dbstate.is_open():
-            return
-        active = self.get_active()
-        self._createmap(None)
-        self.uistate.modify_statusbar(self.dbstate)
+        pass
 
     def animate(self, menu, marks, index, stepyear):
         """
         Create all movements for the people's event.
         Yes, you can see the person moving.
         """
+        if self.stop: # no more database. stop to work
+            return
         if len(marks) == 0:
             self.already_started = False
             return False

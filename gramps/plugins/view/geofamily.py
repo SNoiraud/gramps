@@ -216,7 +216,10 @@ class GeoFamily(GeoGraphyView):
         """
         Rebuild the tree with the given person handle as the root.
         """
-        self.build_tree()
+        if self.uistate.get_active('Family'):
+            self._createmap(self.uistate.get_active('Family'))
+        else:
+            self._createmap(self.uistate.get_active('Person'))
 
     def build_tree(self):
         """
@@ -224,12 +227,7 @@ class GeoFamily(GeoGraphyView):
         all handling of visibility is now in rebuild_trees, see that for more
         information.
         """
-        if not self.dbstate.is_open():
-            return
-        if self.uistate.get_active('Family'):
-            self._createmap(self.uistate.get_active('Family'))
-        else:
-            self._createmap(self.uistate.get_active('Person'))
+        pass
 
     def _createpersonmarkers(self, dbstate, person, comment, fam_id):
         """

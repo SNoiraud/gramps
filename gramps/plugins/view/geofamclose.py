@@ -388,18 +388,7 @@ class GeoFamClose(GeoGraphyView):
         all handling of visibility is now in rebuild_trees, see that for more
         information.
         """
-        self.lifeway_layer.clear_ways()
-        if not self.dbstate.is_open():
-            return
-        active = self.get_active()
-        if active:
-            family = self.dbstate.db.get_family_from_handle(active)
-            if family is None:
-                self.goto_handle(None)
-            else:
-                self.goto_handle(handle=family)
-        else:
-            self.goto_handle(None)
+        pass
 
     def draw(self, menu, marks, color, reference):
         """

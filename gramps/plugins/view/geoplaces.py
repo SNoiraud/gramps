@@ -268,7 +268,11 @@ class GeoPlaces(GeoGraphyView):
         Rebuild the tree with the given places handle as the root.
         """
         self.places_found = []
-        self.build_tree()
+        active = self.uistate.get_active('Place')
+        if active:
+            self._createmap(active)
+        else:
+            self._createmap(None)
 
     def show_all_places(self, menu, event, lat, lon):
         """
@@ -284,13 +288,7 @@ class GeoPlaces(GeoGraphyView):
         all handling of visibility is now in rebuild_trees, see that for more
         information.
         """
-        if not self.dbstate.is_open():
-            return
-        active = self.uistate.get_active('Place')
-        if active:
-            self._createmap(active)
-        else:
-            self._createmap(None)
+        pass
 
     def _create_one_place(self, place):
         """

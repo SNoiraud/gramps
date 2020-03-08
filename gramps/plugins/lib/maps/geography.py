@@ -157,6 +157,8 @@ class GeoGraphyView(OsmGps, NavigationView):
         self.without = 0
         self.place_list = []
         self.places_found = []
+        self.place_list_active = []
+        self.place_list_ref = []
         self.select_fct = None
         self.geo_mainmap = None
         self.reloadtiles = None
@@ -189,18 +191,18 @@ class GeoGraphyView(OsmGps, NavigationView):
         self.nbplaces = 0
         self.nbmarkers = 0
         self.place_without_coordinates = []
+        self.stop = False
 
     def font_changed(self):
         """
         The font or the death symbol changed.
         """
-        self.build_tree()
+        self.goto_handle(None)
 
-    def add_bookmark(self, menu):
+    def add_bookmark(self, *obj):
         """
         Add the place to the bookmark
         """
-        dummy_menu = menu
         mlist = self.selected_handles()
         if mlist:
             self.bookmarks.add(mlist[0])
@@ -272,6 +274,7 @@ class GeoGraphyView(OsmGps, NavigationView):
 
     def clear_view(self):
         """
+        We have no database.
         Clear the map: places, markers, tracks, messages...
         """
         self.place_list = []
@@ -279,6 +282,19 @@ class GeoGraphyView(OsmGps, NavigationView):
         self.remove_all_gps()
         self.remove_all_tracks()
         self.message_layer.clear_messages()
+        self.place_list_active = []
+        self.place_list_ref = []
+        self.lifeway_layer.clear_ways()
+        self.date_layer.clear_dates()
+        self.message_layer.clear_messages()
+        self.message_layer.set_font_attributes(None, None, None)
+        self.kml_layer.clear()
+        self.sort = []
+        self.places_found = []
+        self.place_without_coordinates = []
+
+        # In case we have some methods running while no database.
+        self.stop = True
 
     def change_db(self, dbse):
         """
@@ -288,10 +304,12 @@ class GeoGraphyView(OsmGps, NavigationView):
         is no need to store the database, since we will get the value
         from self.state.db
         """
-        dummy_dbse = dbse
+        if dbse.__class__.__name__ == "DummyDb":
+            return
+        self.stop = False
         if self.active:
             self.bookmarks.redraw()
-        self.build_tree()
+        self.goto_handle(None)
         if self.osm:
             self.osm.grab_focus()
             self.set_crosshair(config.get("geography.show_cross"))
@@ -1304,13 +1322,11 @@ class GeoGraphyView(OsmGps, NavigationView):
         config.set('geography.personal-map', map_source)
         self.clear_map(None, name)
         if map_source == "":
-            print("reset osm")
             config.set("geography.map_service", constants.OPENSTREETMAP)
             self.change_map(self.osm, config.get("geography.map_service"))
             self.reload_tiles()
             return
         if map_source != config.get('geography.personal-map'):
-            print("set personal")
             config.set("geography.map_service", constants.PERSONAL)
             self.change_new_map(name, map_source)
             self.reload_tiles()

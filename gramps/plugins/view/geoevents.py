@@ -217,7 +217,7 @@ class GeoEvents(GeoGraphyView):
         Rebuild the tree with the given events handle as the root.
         """
         self.places_found = []
-        self.build_tree()
+        self.create_tree()
 
     def show_all_events(self, menu, event, lat, lon):
         """
@@ -232,7 +232,13 @@ class GeoEvents(GeoGraphyView):
         all handling of visibility is now in rebuild_trees, see that for more
         information.
         """
-        if not self.dbstate.is_open():
+        pass
+
+    def create_tree(self):
+        """
+        Create all events.
+        """
+        if self.stop:
             return
         active = self.uistate.get_active('Event')
         if active:
