@@ -284,6 +284,8 @@ class GeoClose(GeoGraphyView):
         """
         Rebuild the tree with the given person handle as the root.
         """
+        if self.osm is None:
+            return
         self.place_list_active = []
         self.place_list_ref = []
         self.all_place_list = []
@@ -393,6 +395,8 @@ class GeoClose(GeoGraphyView):
         all handling of visibility is now in rebuild_trees, see that for more
         information.
         """
+        if self.osm is None:
+            return
         self.lifeway_layer.clear_ways()
         if not self.dbstate.is_open():
             return

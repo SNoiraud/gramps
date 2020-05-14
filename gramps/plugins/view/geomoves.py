@@ -268,6 +268,8 @@ class GeoMoves(GeoGraphyView):
         """
         Rebuild the tree with the given family handle as reference.
         """
+        if self.osm is None:
+            return
         if not self.started:
             self.started = True
         self.place_list_active = []
@@ -289,6 +291,8 @@ class GeoMoves(GeoGraphyView):
         all handling of visibility is now in rebuild_trees, see that for more
         information.
         """
+        if self.osm is None:
+            return
         self.place_list_active = []
         self.place_list_ref = []
         self.sort = []
