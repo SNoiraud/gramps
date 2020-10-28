@@ -63,7 +63,7 @@ from decimal import getcontext
 from gramps.gen.const import GRAMPS_LOCALE as glocale
 from gramps.gen.lib import (EventType, Name,
                             Person,
-                            Family, Event, Place, Source,
+                            Family, Event, Place, PlaceName, Source,
                             Citation, Media, Repository, Note, Tag)
 from gramps.gen.plug.menu import (PersonOption, NumberOption, StringOption,
                                   BooleanOption, EnumeratedListOption,
@@ -193,10 +193,14 @@ class NavWebReport(Report):
 
         # Download Options Tab
         self.inc_download = self.options['incdownload']
-        self.dl_fname1 = self.options['down_fname1']
-        self.dl_descr1 = self.options['dl_descr1']
-        self.dl_fname2 = self.options['down_fname2']
-        self.dl_descr2 = self.options['dl_descr2']
+        self.nb_download = self.options['nbdownload']
+        self.dl_descr = {}
+        self.dl_fname = {}
+        for count in range(1, self.nb_download+1):
+            fnamex = 'down_fname%c' % str(count)
+            descrx = 'dl_descr%c' % str(count)
+            self.dl_fname[count] = self.options[fnamex]
+            self.dl_descr[count] = self.options[descrx]
 
         self.encoding = self.options['encoding']
 
@@ -270,6 +274,7 @@ class NavWebReport(Report):
         self.bkref_dict = None
         self.rel_class = None
         self.tab = None
+        self.fam_link = {}
         if self.options['securesite']:
             self.secure_mode = HTTPS
         else:
@@ -369,7 +374,7 @@ class NavWebReport(Report):
         self.tab = {}
         # FIXME: Initialising self.tab in this way means that this code has to
         # run before the Web Page registration - I am not sure whether this is
-        # possible, in which case an alternative approach to provinding the
+        # possible, in which case an alternative approach to providing the
         # mapping of object class to Web Page plugin will be needed.
         for obj_class in ("Person", "Family", "Source", "Citation", "Place",
                           "Event", "Media", "Repository"):
@@ -487,7 +492,7 @@ class NavWebReport(Report):
         if self.inc_updates:
             self.updates_preview_page(self.title)
 
-        # copy all of the neccessary files
+        # copy all of the necessary files
         self.copy_narrated_files()
 
         # if an archive is being used, close it?
@@ -515,18 +520,18 @@ class NavWebReport(Report):
         For the obj_dict, the value is a tuple containing the gramps_id,
         the text name for the object, and the file name for the display.
 
-        For the bkref_dict, the value is a tuple containg the class of object
+        For the bkref_dict, the value is a tuple containing the class of object
         and the handle for the object that refers to the 'key' object.
         """
         _obj_class_list = (Person, Family, Event, Place, Source, Citation,
-                           Media, Repository, Note, Tag)
+                           Media, Repository, Note, Tag, PlaceName)
 
         # setup a dictionary of the required structure
         self.obj_dict = defaultdict(lambda: defaultdict(set))
         self.bkref_dict = defaultdict(lambda: defaultdict(set))
 
         # initialise the dictionary to empty in case no objects of any
-        # particular class are incuded in the web report
+        # particular class are included in the web report
         for obj_class in _obj_class_list:
             self.obj_dict[obj_class] = defaultdict(set)
 
@@ -595,7 +600,7 @@ class NavWebReport(Report):
                             self._add_place(place_handle, Person,
                                             person_handle, event)
                         # If event pages are not being output, then tell the
-                        # media tab to display the perosn's event media. If
+                        # media tab to display the person's event media. If
                         # events are being displayed, then the media are linked
                         # from the event tab
                         if not self.inc_events:
@@ -876,8 +881,10 @@ class NavWebReport(Report):
                 name = ""
         if config.get('preferences.place-auto'):
             place_name = _pd.display_event(self._db, event)
+            pplace_name = _pd.display(self._db, place)
         else:
             place_name = place.get_title()
+            pplace_name = place_name
         if event:
             if self.reference_sort:
                 role_or_date = name
@@ -885,7 +892,7 @@ class NavWebReport(Report):
                 date = event.get_date_object()
                 # calendar is the original date calendar
                 calendar = str(date.get_calendar())
-                # convert date to gregorian for a correct sort
+                # convert date to Gregorian for a correct sort
                 _date = str(date.to_calendar("gregorian"))
                 role_or_date = calendar + ":" + _date
         else:
@@ -894,6 +901,11 @@ class NavWebReport(Report):
                                            False) + self.ext
         self.obj_dict[Place][place_handle] = (place_fname, place_name,
                                               place.gramps_id, event)
+        self.obj_dict[PlaceName][place_name] = (place_handle, place_name,
+                                                place.gramps_id, event)
+        if place_name != pplace_name:
+            self.obj_dict[PlaceName][pplace_name] = (place_handle, pplace_name,
+                                                     place.gramps_id, event)
         self.bkref_dict[Place][place_handle].add((bkref_class, bkref_handle,
                                                   role_or_date
                                                  ))
@@ -1045,7 +1057,7 @@ class NavWebReport(Report):
 
     def copy_narrated_files(self):
         """
-        Copy all of the CSS, image, and javascript files for Narrated Web
+        Copy all of the CSS, image, and JavaScript files for Narrated Web
         """
         imgs = []
 
@@ -1513,7 +1525,7 @@ class NavWebReport(Report):
             output_file.close()
         else:
             output_file.close()
-            if date > 0:
+            if date is not None and date > 0:
                 os.utime(output_file.name, (date, date))
 
     def prepare_copy_media(self, photo):
@@ -1632,6 +1644,10 @@ class NavWebOptions(MenuReportOptions):
         self.__maxinitialimagewidth = None
         self.__citationreferents = None
         self.__incdownload = None
+        self.__max_download = 4 # Add 1 to this counter: In reality 3 downloads
+        self.__nbdownload = None
+        self.__dl_descr = {}
+        self.__down_fname = {}
         self.__placemappages = None
         self.__familymappages = None
         self.__stamenopts = None
@@ -1639,15 +1655,11 @@ class NavWebOptions(MenuReportOptions):
         self.__googlemapkey = None
         self.__ancestortree = None
         self.__css = None
-        self.__dl_descr1 = None
-        self.__dl_descr2 = None
-        self.__down_fname2 = None
         self.__gallery = None
         self.__updates = None
         self.__maxdays = None
         self.__maxupdates = None
         self.__unused = None
-        self.__down_fname1 = None
         self.__navigation = None
         self.__target_cal_uri = None
         self.__securesite = False
@@ -1754,7 +1766,7 @@ class NavWebOptions(MenuReportOptions):
         cright.set_help(_("The copyright to be used for the web files"))
         addopt("cright", cright)
 
-        self.__css = EnumeratedListOption(('StyleSheet'),
+        self.__css = EnumeratedListOption(_('StyleSheet'),
                                           CSS["Basic-Ash"]["id"])
         for (dummy_fname, gid) in sorted(
                 [(CSS[key]["translation"], CSS[key]["id"])
@@ -1976,7 +1988,7 @@ class NavWebOptions(MenuReportOptions):
             _("Max width of initial image"), _DEFAULT_MAX_IMG_WIDTH, 0, 2000)
         self.__maxinitialimagewidth.set_help(
             _("This allows you to set the maximum width "
-              "of the image shown on the media page. Set to 0 for no limit."))
+              "of the image shown on the media page."))
         addopt("maxinitialimagewidth", self.__maxinitialimagewidth)
 
         self.__gallery_changed()
@@ -1994,29 +2006,29 @@ class NavWebOptions(MenuReportOptions):
         addopt("incdownload", self.__incdownload)
         self.__incdownload.connect('value-changed', self.__download_changed)
 
-        self.__down_fname1 = DestinationOption(
-            _("Download Filename"),
-            os.path.join(config.get('paths.website-directory'), ""))
-        self.__down_fname1.set_help(
-            _("File to be used for downloading of database"))
-        addopt("down_fname1", self.__down_fname1)
+        self.__nbdownload = NumberOption(_("How many downloads"),
+                                         2, 1, self.__max_download-1)
+        self.__nbdownload.set_help(_("The number of download files to include "
+                                     "in the download page"))
+        addopt("nbdownload", self.__nbdownload)
+        self.__nbdownload.connect('value-changed', self.__download_changed)
 
-        self.__dl_descr1 = StringOption(_("Description for download"),
-                                        _('Smith Family Tree'))
-        self.__dl_descr1.set_help(_('Give a description for this file.'))
-        addopt("dl_descr1", self.__dl_descr1)
+        for count in range(1, self.__max_download):
+            fnamex = 'down_fname%c' % str(count)
+            descrx = 'dl_descr%c' % str(count)
+            wdir = os.path.join(config.get('paths.website-directory'), "")
+            __down_fname = DestinationOption(_("Download Filename #%c") %
+                                             str(count), wdir)
+            __down_fname.set_help(
+                _("File to be used for downloading of database"))
+            addopt(fnamex, __down_fname)
+            self.__down_fname[count] = __down_fname
 
-        self.__down_fname2 = DestinationOption(
-            _("Download Filename"),
-            os.path.join(config.get('paths.website-directory'), ""))
-        self.__down_fname2.set_help(
-            _("File to be used for downloading of database"))
-        addopt("down_fname2", self.__down_fname2)
-
-        self.__dl_descr2 = StringOption(_("Description for download"),
-                                        _('Johnson Family Tree'))
-        self.__dl_descr2.set_help(_('Give a description for this file.'))
-        addopt("dl_descr2", self.__dl_descr2)
+            __dl_descr = StringOption(_("Description for download"),
+                                      _('Family Tree #%c') % str(count))
+            __dl_descr.set_help(_('Give a description for this file.'))
+            addopt(descrx, __dl_descr)
+            self.__dl_descr[count] = __dl_descr
 
         self.__download_changed()
 
@@ -2376,15 +2388,23 @@ class NavWebOptions(MenuReportOptions):
         Handles the changing nature of include download page
         """
         if self.__incdownload.get_value():
-            self.__down_fname1.set_available(True)
-            self.__dl_descr1.set_available(True)
-            self.__down_fname2.set_available(True)
-            self.__dl_descr2.set_available(True)
+            self.__nbdownload.set_available(True)
+            for count in range(1, self.__max_download):
+                if count <= self.__nbdownload.get_value():
+                    self.__down_fname[count].set_available(True)
+                    self.__dl_descr[count].set_available(True)
+                else:
+                    self.__down_fname[count].set_available(False)
+                    self.__dl_descr[count].set_available(False)
         else:
-            self.__down_fname1.set_available(False)
-            self.__dl_descr1.set_available(False)
-            self.__down_fname2.set_available(False)
-            self.__dl_descr2.set_available(False)
+            self.__nbdownload.set_available(False)
+            for count in range(1, self.__max_download):
+                if count <= self.__nbdownload.get_value():
+                    self.__down_fname[count].set_available(False)
+                    self.__dl_descr[count].set_available(False)
+                else:
+                    self.__down_fname[count].set_available(False)
+                    self.__dl_descr[count].set_available(False)
 
     def __placemap_options(self):
         """

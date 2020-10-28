@@ -61,7 +61,7 @@ from gramps.gen.utils.db import get_participant_from_event
 #-------------------------------------------------------------------------
 
 WIKI_HELP_PAGE = URL_MANUAL_SECT2
-WIKI_HELP_SEC = _('manual|New_Event_dialog')
+WIKI_HELP_SEC = _('New_Event_dialog', 'manual')
 
 #-------------------------------------------------------------------------
 #
@@ -74,7 +74,7 @@ class EditEvent(EditPrimary):
 
         EditPrimary.__init__(self, dbstate, uistate, track,
                              event, dbstate.db.get_event_from_handle,
-                             dbstate.db.get_event_from_gramps_id)
+                             dbstate.db.get_event_from_gramps_id, callback)
 
         self._init_event()
 
@@ -278,9 +278,9 @@ class EditEvent(EditPrimary):
                         self.obj.set_gramps_id(self.db.find_next_event_gramps_id())
                     self.db.commit_event(self.obj, trans)
 
+        self._do_close()
         if self.callback:
             self.callback(self.obj)
-        self._do_close()
 
     def data_has_changed(self):
         """

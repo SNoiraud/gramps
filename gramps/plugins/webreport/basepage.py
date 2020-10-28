@@ -1553,7 +1553,7 @@ class BasePage: # pylint: disable=C1001
         # Sidebar order...
 
         navs = [
-            (self.report.index_fname, self._("Html|Home"),
+            (self.report.index_fname, self._("Home", "Html"),
              self.report.use_home),
             (self.report.intro_fname, self._("Introduction"),
              self.report.use_intro),
@@ -1727,7 +1727,7 @@ class BasePage: # pylint: disable=C1001
                     list_html = Html("li",
                                      self.get_nav_menu_hyperlink(
                                          self.report.index_fname,
-                                         self._("Html|Home")))
+                                         self._("Home", "Html")))
                     unordered += list_html
 
                 # add personal column
@@ -1878,7 +1878,7 @@ class BasePage: # pylint: disable=C1001
                         _linkurl = self.report.build_url_fname_html(_obj.handle,
                                                                     "ppl",
                                                                     linkurl)
-            elif classname == "Family":
+            elif classname == "Family" and self.inc_families:
                 _obj = self.r_db.get_family_from_handle(newhandle)
                 partner1_handle = _obj.get_father_handle()
                 partner2_handle = _obj.get_mother_handle()
@@ -1904,7 +1904,7 @@ class BasePage: # pylint: disable=C1001
                                                                 "ppl", True)
                 if not _name:
                     _name = self._("Unknown")
-            elif classname == "Event":
+            elif classname == "Event" and self.inc_events:
                 _obj = self.r_db.get_event_from_handle(newhandle)
                 _name = _obj.get_description()
                 if not _name:
@@ -1990,59 +1990,16 @@ class BasePage: # pylint: disable=C1001
                     # make a thumbnail of this region
                     newpath = self.copy_thumbnail(photo_handle, photo, region)
                     newpath = self.report.build_url_fname(newpath, uplink=True)
-
                     snapshot += self.media_link(photo_handle, newpath, descr,
                                                 uplink=self.uplink,
                                                 usedescr=False)
                 else:
-
                     dummy_rpath, newpath = self.report.prepare_copy_media(photo)
                     newpath = self.report.build_url_fname(newpath, uplink=True)
-
-                    # FIXME: There doesn't seem to be any point in highlighting
-                    # a sub-region in the thumbnail and linking back to the
-                    # person or whatever. First it is confusing when the link
-                    # probably has nothing to do with the page on which the
-                    # thumbnail is displayed, and second on a thumbnail it is
-                    # probably too small to see, and third, on the thumbnail,
-                    # the link is shown above the image (which is pretty
-                    # useless!)
-                    _region_items = self.media_ref_rect_regions(photo_handle,
-                                                                linkurl=False)
-                    if _region_items:
-                        with Html("div", id="GalleryDisplay") as mediadisplay:
-                            snapshot += mediadisplay
-
-                            ordered = Html("ol", class_="RegionBox")
-                            mediadisplay += ordered
-                            while _region_items:
-                                (name, coord_x, coord_y,
-                                 width, height, linkurl) = _region_items.pop()
-                                ordered += Html("li",
-                                                style="left:%d%%; top:%d%%; "
-                                                "width:%d%%; height:%d%%;" % (
-                                                    coord_x, coord_y,
-                                                    width, height))
-                                ordered += Html("a", name, href=linkurl)
-                            # Need to add link to mediadisplay to get the links:
-                            mediadisplay += self.media_link(photo_handle,
-                                                            newpath, descr,
-                                                            self.uplink, False)
-                    else:
-                        try:
-
-                            # Begin hyperlink. Description is given only for
-                            # the purpose of the alt tag in img element
-                            if self.create_images_index:
-                                snapshot += self.media_link(photo_handle,
-                                                            newpath,
-                                                            descr,
-                                                            uplink=self.uplink,
-                                                            usedescr=False)
-
-                        except (IOError, OSError) as msg:
-                            self.r_user.warn(_("Could not add photo to page"),
-                                             str(msg))
+                    snapshot += self.media_link(photo_handle, newpath,
+                                                descr,
+                                                uplink=self.uplink,
+                                                usedescr=False)
             else:
                 # begin hyperlink
                 snapshot += self.doc_link(photo_handle, descr,
@@ -2070,12 +2027,6 @@ class BasePage: # pylint: disable=C1001
             if photoref.ref in photolist_handles:
                 photo = photolist_handles[photoref.ref]
                 photolist_ordered.append(photo)
-                try:
-                    if photo in photolist:
-                        photolist.remove(photo)
-                except ValueError:
-                    LOG.warning("Error trying to remove '%s' from photolist",
-                                photo)
         # and add any that are left (should there be any?)
         photolist_ordered += photolist
 
@@ -2421,9 +2372,10 @@ class BasePage: # pylint: disable=C1001
         @param: handle -- The family handle
         @param: url    -- url to be linked
         """
-        dummy_handle = handle
+        self.report.fam_link[handle] = url
         return Html("a", self._("Family Map"), href=url,
-                    title=self._("Family Map"), class_="familymap", inline=True)
+                    title=self._("Family Map"), class_="familymap",
+                    inline=True)
 
     def display_spouse(self, partner, family, place_lat_long):
         """
@@ -2521,9 +2473,6 @@ class BasePage: # pylint: disable=C1001
             # not necessarily mean that a page has been generated
             (link, name, gid) = result
 
-        if name_style == _NAME_STYLE_FIRST and person:
-            name = _get_short_name(person.get_gender(),
-                                   person.get_primary_name())
         name = html_escape(name)
         # construct the result
         if not self.noid and gid != "":
@@ -2630,9 +2579,6 @@ class BasePage: # pylint: disable=C1001
         @param: place -- Place object from the database
         @param: table -- Table from Placedetail
         """
-        if place in self.report.visited:
-            return None
-        self.report.visited.append(place)
         # add table body
         tbody = Html("tbody")
         table += tbody
@@ -2674,6 +2620,7 @@ class BasePage: # pylint: disable=C1001
                 (self._("State/ Province"),
                  mlocation.get(PlaceType.STATE, '')),
                 (self._("Postal Code"), place.get_code()),
+                (self._("Province"), mlocation.get(PlaceType.PROVINCE, '')),
                 (self._("Country"), mlocation.get(PlaceType.COUNTRY, ''))]:
             if data:
                 trow = Html("tr") + (
@@ -3100,7 +3047,7 @@ class BasePage: # pylint: disable=C1001
 
         @param: output_file  -- Open file that is being written to
         @param: htmlinstance -- Web page created with libhtml
-                                src/plugins/lib/libhtml.py
+                                gramps/plugins/lib/libhtml.py
         """
         htmlinstance.write(partial(print, file=output_file))
 

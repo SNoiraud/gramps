@@ -68,8 +68,8 @@ from gramps.gen.errors import ReportError
 #------------------------------------------------------------------------
 
 # _T_ is a gramps-defined keyword -- see po/update_po.py and po/genpot.sh
-def _T_(value): # enable deferred translations (see Python docs 22.1.3.4)
-    return value
+def _T_(value, context=''): # enable deferred translations
+    return "%s\x04%s" % (context, value) if context else value
 
 CUSTOM = _T_("Custom")
 
@@ -140,6 +140,8 @@ class IndivCompleteReport(Report):
         self.use_pagebreak = menu.get_option_by_name('pageben').get_value()
 
         self.sort = menu.get_option_by_name('sort').get_value()
+
+        self.name_is_title = menu.get_option_by_name('name_title').get_value()
 
         self.use_attrs = menu.get_option_by_name('incl_attrs').get_value()
         self.use_census = menu.get_option_by_name('incl_census').get_value()
@@ -853,16 +855,20 @@ class IndivCompleteReport(Report):
         self.bibli = Bibliography(
             Bibliography.MODE_DATE|Bibliography.MODE_PAGE)
 
-        title1 = self._("Complete Individual Report")
-        text2 = self._name_display.display(self.person)
+        if self.name_is_title:
+            title1 = self._name_display.display(self.person)
+        else:
+            title1 = self._("Complete Individual Report")
+            text2 = self._name_display.display(self.person)
+            mark2 = IndexMark(text2, INDEX_TYPE_TOC, 2)
         mark1 = IndexMark(title1, INDEX_TYPE_TOC, 1)
-        mark2 = IndexMark(text2, INDEX_TYPE_TOC, 2)
         self.doc.start_paragraph("IDS-Title")
         self.doc.write_text(title1, mark1)
         self.doc.end_paragraph()
-        self.doc.start_paragraph("IDS-Title")
-        self.doc.write_text(text2, mark2)
-        self.doc.end_paragraph()
+        if not self.name_is_title:
+            self.doc.start_paragraph("IDS-Title")
+            self.doc.write_text(text2, mark2)
+            self.doc.end_paragraph()
 
         self.doc.start_paragraph("IDS-Normal")
         self.doc.end_paragraph()
@@ -1078,6 +1084,11 @@ class IndivCompleteOptions(MenuReportOptions):
         pageben.set_help(
             _("Whether to start a new page before the end notes."))
         menu.add_option(category_name, "pageben", pageben)
+
+        name_is_title = BooleanOption(_("Use name of person as title"), False)
+        name_is_title.set_help(_("Whether the title should be the name of the "
+                                 "person, or 'Complete Individual Report'"))
+        menu.add_option(category_name, "name_title", name_is_title)
 
         ################################
         category_name = _("Report Options (2)")
