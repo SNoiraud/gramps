@@ -1007,6 +1007,7 @@ class GeoGraphyView(OsmGps, NavigationView):
             if val:
                 kmlfile = Kml(val)
                 points = kmlfile.add_points()
+                kml.destroy()
                 def init_place(place):
                     (name, coords) = place
                     latlong = coords.pop()
@@ -1021,6 +1022,13 @@ class GeoGraphyView(OsmGps, NavigationView):
                     return new_place
 
                 if len(points) > 5:
+                    from gramps.gui.dialog import WarningDialog
+                    WarningDialog(
+                        _('You have more than 5 places in this kml file.'),
+                        _("You will need to edit each place manually "
+                          "to add place type, ...\n"
+                          "You have %d places to edit." % len(points)),
+                        parent=self.uistate.window)
                     with DbTxn("Add Places from Kml",
                                self.dbstate.db) as trans:
                         # add places without editing them. You need to
@@ -1036,7 +1044,8 @@ class GeoGraphyView(OsmGps, NavigationView):
                                       n_place)
                         except WindowActiveError:
                             pass
-        kml.destroy()
+            else:
+                kml.destroy()
 
     def place_exists(self, place_name):
         """
