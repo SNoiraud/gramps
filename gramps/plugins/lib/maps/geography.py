@@ -48,6 +48,7 @@ from gi.repository import OsmGpsMap as osmgpsmap
 # Gramps Modules
 #
 #-------------------------------------------------------------------------
+from gramps.gen.db import DbTxn
 from gramps.gen.lib import EventType, Place, PlaceRef, PlaceName
 from gramps.gen.display.name import displayer as _nd
 from gramps.gen.display.place import displayer as _pd
@@ -1006,7 +1007,7 @@ class GeoGraphyView(OsmGps, NavigationView):
             if val:
                 kmlfile = Kml(val)
                 points = kmlfile.add_points()
-                for place in points:
+                def init_place(place):
                     (name, coords) = place
                     latlong = coords.pop()
                     (lat, lon) = latlong
@@ -1017,10 +1018,24 @@ class GeoGraphyView(OsmGps, NavigationView):
                     new_place.set_title(name)
                     new_place.set_latitude(str(lat))
                     new_place.set_longitude(str(lon))
-                    try:
-                        EditPlace(self.dbstate, self.uistate, [], new_place)
-                    except WindowActiveError:
-                        pass
+                    return new_place
+
+                if len(points) > 5:
+                    with DbTxn("Add Places from Kml",
+                               self.dbstate.db) as trans:
+                        # add places without editing them. You need to
+                        # manually edit them to add place type, enclosing...
+                        for place in points:
+                            n_place = init_place(place)
+                            self.dbstate.db.add_place(n_place, trans)
+                else:
+                    for place in points:
+                        n_place = init_place(place)
+                        try:
+                            EditPlace(self.dbstate, self.uistate, [],
+                                      n_place)
+                        except WindowActiveError:
+                            pass
         kml.destroy()
 
     def place_exists(self, place_name):
