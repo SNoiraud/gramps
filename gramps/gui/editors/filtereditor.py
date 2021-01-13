@@ -1123,6 +1123,7 @@ class FilterEditor(ManagedWindow):
                             self.edit_filter)
         self.draw_filters()
         self._set_size()
+        self.get_window().set_tooltip_text(_("Any changes are instantly saved"))
         self.show()
 
     def build_menu_names(self, obj):
