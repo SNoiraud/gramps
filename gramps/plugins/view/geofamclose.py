@@ -135,12 +135,7 @@ _UI_DEF = [
     </child>
     <child groups='RO'>
       <object class="GtkToolButton">
-        <property name="icon-name">go-home</property>
-        <property name="action-name">win.HomePerson</property>
-        <property name="tooltip_text" translatable="yes">'''
-    '''Go to the home person</property>
-        <property name="label" translatable="yes">_Home</property>
-        <property name="use-underline">True</property>
+        <property name="icon-name">action-unavailable</property>
       </object>
       <packing>
         <property name="homogeneous">False</property>

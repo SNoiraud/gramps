@@ -148,6 +148,14 @@ _UI_DEF = [
         <property name="homogeneous">False</property>
       </packing>
     </child>
+    <child groups='RO'>
+      <object class="GtkToolButton">
+        <property name="icon-name">gramps-person</property>
+      </object>
+      <packing>
+        <property name="homogeneous">False</property>
+      </packing>
+    </child>
     </placeholder>
 ''',
     '''
