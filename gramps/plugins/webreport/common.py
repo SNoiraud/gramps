@@ -229,6 +229,7 @@ https://openlayers.org/en/latest/examples/
 OSM_MARKERS = """
   window.addEventListener("load", function() {
     var map;
+    var heat = '%s';
     var tracelife = %s;
     var iconStyle = new ol.style.Style({
       image: new ol.style.Icon(({
@@ -241,6 +242,10 @@ OSM_MARKERS = """
     });
     var markerSource = new ol.source.Vector({
     });
+    var centerCoord = new ol.proj.transform([%s, %s], 'EPSG:4326', 'EPSG:3857');
+    var zoom = %d;
+    var radius = %d;
+    var blur = %d;
     for (var i = 0; i < tracelife.length; i++) {
       var loc = tracelife[i];
       var iconFeature = new ol.Feature({
@@ -260,13 +265,27 @@ OSM_MARKERS = """
       source: markerSource,
       style: iconStyle
     });
-    var centerCoord = new ol.proj.transform([%s, %s], 'EPSG:4326', 'EPSG:3857');
-    map = new ol.Map({
-                 target: 'map_canvas',
-                 layers: [new ol.layer.Tile({ source: new ol.source.OSM() }),
-                          markerLayer, tooltip],
-                 view: new ol.View({ center: centerCoord, zoom: %d })
-                 });
+    heatmap = new ol.layer.Heatmap({
+      source: markerSource,
+      radius: radius,
+      blur: blur,
+      style: iconStyle
+    });
+    if (heat == "heatmap") {
+      map = new ol.Map({
+                   target: 'map_canvas',
+                   layers: [new ol.layer.Tile({ source: new ol.source.OSM() }),
+                            heatmap],
+                   view: new ol.View({ center: centerCoord, zoom: zoom })
+                   });
+    } else {
+      map = new ol.Map({
+                   target: 'map_canvas',
+                   layers: [new ol.layer.Tile({ source: new ol.source.OSM() }),
+                            markerLayer, tooltip],
+                   view: new ol.View({ center: centerCoord, zoom: zoom })
+                   });
+    };
 """
 
 STAMEN_MARKERS = """

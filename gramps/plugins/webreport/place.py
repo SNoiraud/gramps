@@ -650,6 +650,7 @@ class PlacePages(BasePage):
                         elif self.mapservice == "OpenStreetMap":
                             jsc += MARKER_PATH % marker_path
                             jsc += OSM_MARKERS % (
+                                "markers",
                                 [
                                     [
                                         float(longitude),
@@ -661,6 +662,8 @@ class PlacePages(BasePage):
                                 longitude,
                                 latitude,
                                 10,
+                                0,
+                                0,
                             )
                             jsc += OPENLAYER
                         else:  # STAMEN

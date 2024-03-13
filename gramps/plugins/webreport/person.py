@@ -1154,9 +1154,9 @@ class PersonPages(BasePage):
                 # we are using OpenStreetMap
                 elif self.mapservice == "OpenStreetMap":
                     if midy_ is None:
-                        jsc += OSM_MARKERS % (tracelife, longitude, latitude, 10)
+                        jsc += OSM_MARKERS % ("markers", tracelife, longitude, latitude, 10, 0, 0)
                     else:
-                        jsc += OSM_MARKERS % (tracelife, midy_, midx_, zoomlevel)
+                        jsc += OSM_MARKERS % ("markers", tracelife, midy_, midx_, zoomlevel, 0, 0)
                     jsc += OPENLAYER
                 # we are using StamenMap
                 elif self.mapservice == "StamenMap":
