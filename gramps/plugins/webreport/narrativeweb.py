@@ -135,7 +135,7 @@ from gramps.plugins.webreport.multiselect import (
     MultiSelectSurnames,
     HeatmapSurnamesScrolled,
     MultiSelectTags,
-    HeatmapTagsScrolled
+    HeatmapTagsScrolled,
 )
 
 from gramps.plugins.webreport.common import (
@@ -3175,7 +3175,6 @@ class NavWebOptions(MenuReportOptions):
             )
         )
         menu.add_option(category_name, "after_year", self.__after_year)
-
 
     def __add_heatmap_options(self, menu):
         """

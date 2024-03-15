@@ -3144,7 +3144,12 @@ class BasePage:
         """
         url = self.report.build_url_fname_html(name, "heat", uplink)
 
-        hyper = Html("a", html_escape(self._(name)), href=url.replace(" ", ""), title=html_escape(self._(name)))
+        hyper = Html(
+            "a",
+            html_escape(self._(name)),
+            href=url.replace(" ", ""),
+            title=html_escape(self._(name)),
+        )
 
         # return hyperlink to its callers
         return hyper
