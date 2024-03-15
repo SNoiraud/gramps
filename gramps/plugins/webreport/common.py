@@ -341,6 +341,8 @@ OPENLAYER = """
     var closer = document.getElementById('popup-closer');
     var tip = document.getElementById('tooltip');
     var tipcontent = document.getElementById('tooltip-content');
+    var tltip1 = undefined;
+    var tltip2 = undefined;
     var tooltip = new ol.Overlay({
       element: tip,
       positioning: 'bottom-center',
@@ -362,12 +364,18 @@ OPENLAYER = """
     closer.onclick = function() {
       popup.setPosition(undefined);
       closer.blur();
+      tltip1 = undefined;
+      tltip2 = undefined;
       return false;
     };
     map.on('pointermove', function(evt) {
       evt.preventDefault()
+      if (tltip2 !== undefined) {
+        return;
+      }
       var feature = this.forEachFeatureAtPixel(evt.pixel,
                                                function(feature, layer) {
+        tltip1 = feature;
         return feature;
       });
       map.getTargetElement().style.cursor = feature ? 'pointer' : '';
@@ -385,8 +393,12 @@ OPENLAYER = """
     });
     map.on('singleclick', function(evt) {
       evt.preventDefault();
+      if (tltip1 !== undefined) {
+        tooltip.setPosition(undefined);
+      }
       var feature = map.forEachFeatureAtPixel(evt.pixel,
                                               function(feature, layer) {
+        tltip2 = feature;
         return feature;
       });
       if (feature) {
