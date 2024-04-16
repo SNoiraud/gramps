@@ -908,7 +908,12 @@ class BasePage:
         notelist = event_ref.get_note_list()
         notelist.extend(event.get_note_list()[:])  # we don't want to modify
         # cached original
-        htmllist = self.dump_notes(notelist, Event)
+        notes = []
+        # sometimes we have duplicate handles.
+        for note_hdle in notelist:
+            if note_hdle not in notes:
+                notes.append(note_hdle)
+        htmllist = self.dump_notes(notes, Event)
 
         # if the event or event reference has an attribute attached to it,
         # get the text and format it correctly?
