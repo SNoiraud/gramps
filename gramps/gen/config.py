@@ -333,7 +333,7 @@ register("preferences.age-display-precision", 1)
 register("preferences.age-after-death", True)
 register("preferences.age-rounded-year", True)
 register("preferences.cite-plugin", "cite-legacy")
-register('preferences.confidence', 2) # Citation.CONF_NORMAL
+register("preferences.confidence", 2)  # Citation.CONF_NORMAL
 
 register("colors.scheme", 0)
 register("colors.male-alive", ["#b8cee6", "#1f344a"])
