@@ -1153,11 +1153,7 @@ class PersonPages(BasePage):
                 # we are using OpenStreetMap
                 elif self.mapservice == "OpenStreetMap":
                     if midy_ is None:
-                        latitude, longitude = conv_lat_lon(
-                            latitude,
-                            longitude,
-                            "D.D8"
-                        )
+                        latitude, longitude = conv_lat_lon(latitude, longitude, "D.D8")
                         jsc += OSM_MARKERS % (
                             "markers",
                             tracelife,
