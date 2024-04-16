@@ -37,6 +37,7 @@ _ = glocale.translation.sgettext
 
 from ...widgets import MonitoredMenu, DateEntry, BasicEntry
 from gramps.gen.lib import Citation
+from gramps.gen.config import config
 from .. import build_filter_model
 from . import SidebarFilter
 from gramps.gen.filters import GenericFilterFactory, rules
@@ -142,7 +143,7 @@ class CitationSidebarFilter(SidebarFilter):
         self.filter_id.set_text("")
         self.filter_page.set_text("")
         self.filter_date.set_text("")
-        self.filter_conf.set_active(Citation.CONF_NORMAL)
+        self.filter_conf.set_active(config.get("preferences.confidence"))
         self.filter_note.set_text("")
         self.tag.set_active(0)
         self.generic.set_active(0)

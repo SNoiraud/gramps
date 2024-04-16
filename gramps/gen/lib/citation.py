@@ -45,6 +45,7 @@ from .tagbase import TagBase
 from .attrbase import SrcAttributeBase
 from .citationbase import IndirectCitationBase
 from ..const import GRAMPS_LOCALE as glocale
+from ..config import config
 
 _ = glocale.translation.gettext
 
@@ -81,7 +82,7 @@ class Citation(
         DateBase.__init__(self)  #  2
         self.source_handle = None  #  5
         self.page = ""  #  3
-        self.confidence = Citation.CONF_NORMAL  #  4
+        self.confidence = config.get("preferences.confidence")  #  4
         SrcAttributeBase.__init__(self)  #  8
 
     @classmethod

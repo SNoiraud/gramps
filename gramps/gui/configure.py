@@ -2150,6 +2150,25 @@ class GrampsPreferences(ConfigureDialog):
         )
 
         row += 1
+        # Default Citation Confidence
+        cbox = Gtk.ComboBoxText()
+        confidence = [
+            _("Very Low"),
+            _("Low"),
+            _("Normal"),
+            _("High"),
+            _("Very High")]
+
+        list(map(cbox.append_text, confidence))
+        cbox.set_active(config.get('preferences.confidence'))
+        cbox.connect('changed',
+                     lambda obj: config.set('preferences.confidence',
+                                            obj.get_active()))
+        lwidget = BasicLabel(_("%s: ") % _('Default Citation confidence'))
+        grid.attach(lwidget, 0, row, 1, 1)
+        grid.attach(cbox, 1, row, 2, 1)
+
+        row += 1
         # height multiple surname table
         self.add_pos_int_entry(
             grid,
