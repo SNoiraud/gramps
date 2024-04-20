@@ -222,6 +222,69 @@ FORMAT_TOOLBAR = (
       </packing>
     </child>
     <child>
+      <object class="GtkToolButton" id="previous">
+        <property name="label" translatable="yes">_Back</property>
+        <property name="action-name">ste.BACK</property>
+        <property name="icon-name">go-previous</property>
+      </object>
+      <packing>
+        <property name="homogeneous">False</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkToolButton" id="next">
+        <property name="label" translatable="yes">_Forward</property>
+        <property name="action-name">ste.FWD</property>
+        <property name="icon-name">go-next</property>
+      </object>
+      <packing>
+        <property name="homogeneous">False</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkToolItem">
+        <property name="tooltip_text" translatable="yes">Search string in this note</property>
+        <child>
+          <object class="GtkComboBox" id="Search">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="has_entry">True</property>
+                <property name="entry_text_column">0</property>
+                <child internal-child="entry">
+                  <object class="GtkEntry" id="combobox-entry">
+                    <property name="can_focus">True</property>
+                  </object>
+                </child>
+
+          </object>
+        </child>
+      </object>
+    </child>
+    <child>
+      <object class="GtkToolButton">
+        <property name="icon-name">edit-clear</property>
+        <property name="action-name">ste.CLEARV</property>
+        <property name="tooltip_text" translatable="yes">'''
+    '''Remove the current value from the list</property>
+        <property name="label" translatable="yes">Remove the current value from the list</property>
+      </object>
+      <packing>
+        <property name="homogeneous">False</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkToolButton">
+        <property name="icon-name">edit-clear-history</property>
+        <property name="action-name">ste.CLEARH</property>
+        <property name="tooltip_text" translatable="yes">'''
+    '''Clear search history</property>
+        <property name="label" translatable="yes">Clear search history</property>
+      </object>
+      <packing>
+        <property name="homogeneous">False</property>
+      </packing>
+    </child>
+    <child>
       <object class="GtkSeparatorToolItem">
         <property name="draw">False</property>
         <property name="hexpand">True</property>
@@ -372,6 +435,7 @@ class StyledTextEditor(Gtk.TextView):
 
         # variable to not copy to clipboard on double/triple click
         self.selclick = False
+        # self.mark = None
 
     # virtual methods
 
@@ -464,7 +528,12 @@ class StyledTextEditor(Gtk.TextView):
             simple_access = SimpleAccess(win_obj.dbstate.db)
             url = link_tag.data
             if url.startswith("gramps://"):
-                obj_class, prop, value = url[9:].split("/", 2)
+                fields = len(url[9:].split("/"))
+                if fields < 4:
+                    obj_class, prop, value = url[9:].split("/")
+                else:
+                    obj_class, prop = url[9:].split("/", 1)
+                    value = _("Invalid format")
                 display = simple_access.display(obj_class, prop, value) or url
         return display + (
             (
@@ -636,6 +705,10 @@ class StyledTextEditor(Gtk.TextView):
             ("CLEAR", self._format_clear_cb),
             ("STUndo", self.undo, "<primary>z"),
             ("STRedo", self.redo, "<primary><shift>z"),
+            ('FWD', self.next_word_in_text, '<primary>n'),
+            ('BACK', self.previous_word_in_text, '<primary><shift>n'),
+            ('CLEARV', self.clear_current_search),
+            ('CLEARH', self.clear_search_history),
         ]
 
         # the following are done manually rather than using actions
@@ -664,6 +737,25 @@ class StyledTextEditor(Gtk.TextView):
         self.fontsize = fontsize.get_child()
         self.fontsize.set_text(str(default))
         fontsize.show()
+
+        # set the search list initial values
+        self.search = builder.get_object('Search')
+        if not config.is_set("search.list"):
+            config.register("search.list", [])
+        if not config.is_set("search.max"):  # maximum values in history search
+            config.register("search.max", 10)
+        items = config.get("search.list")
+        self.set_model(items)
+        self.search.connect("changed", self.search_in_note)
+        self.search.get_child().connect('activate', self.new_search_in_note)
+        self.search.show()
+        self.search_str = None
+        self.index = 0
+        self.nbot = 0
+        self.next_b = builder.get_object('next')
+        self.prev_b = builder.get_object('previous')
+        self.next_b.set_sensitive(False)
+        self.prev_b.set_sensitive(False)
 
         # create the action group and insert all the actions
         self.action_group = ActionGroup("Format", _actions, "ste")
@@ -700,6 +792,185 @@ class StyledTextEditor(Gtk.TextView):
             if not icon_theme.has_icon(primary):
                 name = fallback
             icon.set_from_icon_name(name, Gtk.IconSize.LARGE_TOOLBAR)
+
+    def new_search_in_note(self, arg1):
+        """
+        You enterd a new value in the entry field
+        """
+        val = self.search.get_child().get_text()
+        items = config.get("search.list")
+        if val in items:
+            return  # avoid duplicate values in the search list
+        if len(items) >= config.get('search.max'):
+            rem = items[0]
+            items.remove(rem)
+        items.append(val)
+        self.set_model(items)
+        config.set("search.list", items)
+        self.search_in_note(None, val=True)
+        self.index = 0
+
+    def search_in_note(self, arg1, val=False):
+        """
+        You selected a value in the existing list.
+        """
+        if val:
+            items = config.get("search.list")
+            idx = len(items) - 1
+        else:
+            idx = self.search.get_active()
+        items = config.get("search.list")
+        self.start = 0
+        self.index = 0
+        if idx != -1:
+            self.get_word_in_text(items[idx])
+
+    def get_word_in_text(self, val):
+        """
+        Looking for the selected string in the note text.
+        """
+        self.index = 0
+        text_str = self.textbuffer.get_text().get_string()
+        self.start_iter = self.textbuffer.get_start_iter()
+        self.textbuffer.place_cursor(self.start_iter)
+        mark = self.textbuffer.get_insert()
+        _iter = self.textbuffer.get_iter_at_mark(mark)
+        self.scroll_to_mark(mark, 0.4, True, 0.0, 0.2)
+        self.textbuffer.place_cursor(self.textbuffer.get_iter_at_mark(mark))
+        if self.place_cursor_onscreen():
+            self.emit('move-cursor', Gtk.MovementStep.LOGICAL_POSITIONS, 0, False)
+        self.search_str = val
+        context = self.search.get_child().get_style_context()
+        context.remove_class('error')
+        index = text_str.find(self.search_str, self.start)
+        if index != -1:
+            found = self.start_iter.forward_search(self.search_str,
+                                                   Gtk.TextSearchFlags.TEXT_ONLY, None)
+            if found:
+                match_start, match_end = found
+                self.textbuffer.place_cursor(match_start)
+                mark = self.textbuffer.get_insert()
+                self.textbuffer.place_cursor(self.textbuffer.get_iter_at_mark(mark))
+                if self.place_cursor_onscreen():
+                    self.emit('move-cursor', Gtk.MovementStep.LOGICAL_POSITIONS, index, False)
+                self.textbuffer.select_range(match_start, match_end)
+                self.index = index + 1
+                self.last_operation = 0  # Start
+                self.next_b.set_sensitive(True)
+                self.nbot = 1
+        else:
+            context.add_class('error')
+            self.search_str = None
+            self.next_b.set_sensitive(False)
+
+    def next_word_in_text(self, arg1, arg2):
+        """
+        Looking for the next selected string in the note text.
+        """
+        if not self.search_str:
+            return
+        text_str = self.textbuffer.get_text().get_string()
+        self.start_iter = self.textbuffer.get_start_iter()
+        if self.last_operation == 2:
+            self.index += 1
+        if self.place_cursor_onscreen():
+            self.emit('move-cursor', Gtk.MovementStep.LOGICAL_POSITIONS, 0, False)
+        context = self.search.get_child().get_style_context()
+        context.remove_class('error')
+        index = text_str.find(self.search_str, self.index + 1)
+        if index != -1:
+            cur_iter = self.textbuffer.get_iter_at_offset(index)
+            found = cur_iter.forward_search(self.search_str,
+                                            Gtk.TextSearchFlags.TEXT_ONLY, None)
+            if found:
+                match_start, match_end = found
+                self.textbuffer.place_cursor(match_start)
+                mark = self.textbuffer.get_insert()
+                self.scroll_to_mark(mark, 0.4, True, 0.0, 0.2)
+                if self.place_cursor_onscreen():
+                    self.emit('move-cursor', Gtk.MovementStep.LOGICAL_POSITIONS,
+                              index - self.index, False)
+                self.textbuffer.select_range(match_start, match_end)
+                self.index = index + 1
+                self.last_operation = 1  # Next
+                self.next_b.set_sensitive(True)
+                self.nbot += 1
+                if self.nbot < 1:
+                    self.prev_b.set_sensitive(False)
+                else:
+                    self.prev_b.set_sensitive(True)
+        else:
+            context.add_class('error')
+            self.next_b.set_sensitive(False)
+
+    def previous_word_in_text(self, arg1, arg2):
+        """
+        Looking for the previous selected string in the note text.
+        """
+        if not self.search_str:
+            return
+        if self.last_operation == 1:
+            self.index -= 1
+        text_str = self.textbuffer.get_text().get_string()
+        self.start_iter = self.textbuffer.get_start_iter()
+        context = self.search.get_child().get_style_context()
+        context.remove_class('error')
+        index = text_str.rfind(self.search_str, 0, self.index)
+        if index != -1:
+            mark = self.textbuffer.get_insert()
+            _iter = self.textbuffer.get_iter_at_mark(mark)
+            found = _iter.backward_search(self.search_str,
+                                          Gtk.TextSearchFlags.TEXT_ONLY, None)
+            if found:
+                match_start, match_end = found
+                self.textbuffer.place_cursor(match_start)
+                mark = self.textbuffer.get_insert()
+                self.scroll_to_mark(mark, 0.4, True, 0.0, 0.2)
+                if self.place_cursor_onscreen():
+                    self.emit('move-cursor', Gtk.MovementStep.LOGICAL_POSITIONS,
+                              index - self.index, False)
+                self.textbuffer.select_range(match_start, match_end)
+                self.index = index - 1
+                self.last_operation = 2  # Previous
+                self.next_b.set_sensitive(True)
+                self.nbot -= 1
+                if self.nbot < 1:
+                    self.prev_b.set_sensitive(False)
+                else:
+                    self.prev_b.set_sensitive(True)
+        else:
+            context.add_class('error')
+            self.prev_b.set_sensitive(False)
+
+    def set_model(self, items):
+        """
+        Generate a new model from the list of items and apply it.
+        """
+        model = Gtk.ListStore(GObject.TYPE_STRING)
+        for item in items:
+            model.append((item, ))
+        self.search.set_model(model)
+
+    def clear_current_search(self, arg1, arg2):
+        """
+        Remove the last selected item from the list
+        """
+        val = self.search.get_child().get_text()
+        items = config.get("search.list")
+        if val in items:
+            items.remove(val)
+        config.set("search.list", items)
+        self.search.get_child().set_text("")
+        self.set_model(items)
+
+    def clear_search_history(self, arg1, arg2):
+        """
+        Remove all items in the search list
+        """
+        items = []
+        config.set("search.list", items)
+        self.search.get_child().set_text("")
+        self.set_model(items)
 
     def set_transient_parent(self, parent=None):
         self.transient_parent = parent
