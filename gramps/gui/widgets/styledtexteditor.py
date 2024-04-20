@@ -705,10 +705,10 @@ class StyledTextEditor(Gtk.TextView):
             ("CLEAR", self._format_clear_cb),
             ("STUndo", self.undo, "<primary>z"),
             ("STRedo", self.redo, "<primary><shift>z"),
-            ('FWD', self.next_word_in_text, '<primary>n'),
-            ('BACK', self.previous_word_in_text, '<primary><shift>n'),
-            ('CLEARV', self.clear_current_search),
-            ('CLEARH', self.clear_search_history),
+            ("FWD", self.next_word_in_text, "<primary>n"),
+            ("BACK", self.previous_word_in_text, "<primary><shift>n"),
+            ("CLEARV", self.clear_current_search),
+            ("CLEARH", self.clear_search_history),
         ]
 
         # the following are done manually rather than using actions
@@ -739,7 +739,7 @@ class StyledTextEditor(Gtk.TextView):
         fontsize.show()
 
         # set the search list initial values
-        self.search = builder.get_object('Search')
+        self.search = builder.get_object("Search")
         if not config.is_set("search.list"):
             config.register("search.list", [])
         if not config.is_set("search.max"):  # maximum values in history search
@@ -747,13 +747,13 @@ class StyledTextEditor(Gtk.TextView):
         items = config.get("search.list")
         self.set_model(items)
         self.search.connect("changed", self.search_in_note)
-        self.search.get_child().connect('activate', self.new_search_in_note)
+        self.search.get_child().connect("activate", self.new_search_in_note)
         self.search.show()
         self.search_str = None
         self.index = 0
         self.nbot = 0
-        self.next_b = builder.get_object('next')
-        self.prev_b = builder.get_object('previous')
+        self.next_b = builder.get_object("next")
+        self.prev_b = builder.get_object("previous")
         self.next_b.set_sensitive(False)
         self.prev_b.set_sensitive(False)
 
@@ -801,7 +801,7 @@ class StyledTextEditor(Gtk.TextView):
         items = config.get("search.list")
         if val in items:
             return  # avoid duplicate values in the search list
-        if len(items) >= config.get('search.max'):
+        if len(items) >= config.get("search.max"):
             rem = items[0]
             items.remove(rem)
         items.append(val)
@@ -838,28 +838,31 @@ class StyledTextEditor(Gtk.TextView):
         self.scroll_to_mark(mark, 0.4, True, 0.0, 0.2)
         self.textbuffer.place_cursor(self.textbuffer.get_iter_at_mark(mark))
         if self.place_cursor_onscreen():
-            self.emit('move-cursor', Gtk.MovementStep.LOGICAL_POSITIONS, 0, False)
+            self.emit("move-cursor", Gtk.MovementStep.LOGICAL_POSITIONS, 0, False)
         self.search_str = val
         context = self.search.get_child().get_style_context()
-        context.remove_class('error')
+        context.remove_class("error")
         index = text_str.find(self.search_str, self.start)
         if index != -1:
-            found = self.start_iter.forward_search(self.search_str,
-                                                   Gtk.TextSearchFlags.TEXT_ONLY, None)
+            found = self.start_iter.forward_search(
+                self.search_str, Gtk.TextSearchFlags.TEXT_ONLY, None
+            )
             if found:
                 match_start, match_end = found
                 self.textbuffer.place_cursor(match_start)
                 mark = self.textbuffer.get_insert()
                 self.textbuffer.place_cursor(self.textbuffer.get_iter_at_mark(mark))
                 if self.place_cursor_onscreen():
-                    self.emit('move-cursor', Gtk.MovementStep.LOGICAL_POSITIONS, index, False)
+                    self.emit(
+                        "move-cursor", Gtk.MovementStep.LOGICAL_POSITIONS, index, False
+                    )
                 self.textbuffer.select_range(match_start, match_end)
                 self.index = index + 1
                 self.last_operation = 0  # Start
                 self.next_b.set_sensitive(True)
                 self.nbot = 1
         else:
-            context.add_class('error')
+            context.add_class("error")
             self.search_str = None
             self.next_b.set_sensitive(False)
 
@@ -874,22 +877,27 @@ class StyledTextEditor(Gtk.TextView):
         if self.last_operation == 2:
             self.index += 1
         if self.place_cursor_onscreen():
-            self.emit('move-cursor', Gtk.MovementStep.LOGICAL_POSITIONS, 0, False)
+            self.emit("move-cursor", Gtk.MovementStep.LOGICAL_POSITIONS, 0, False)
         context = self.search.get_child().get_style_context()
-        context.remove_class('error')
+        context.remove_class("error")
         index = text_str.find(self.search_str, self.index + 1)
         if index != -1:
             cur_iter = self.textbuffer.get_iter_at_offset(index)
-            found = cur_iter.forward_search(self.search_str,
-                                            Gtk.TextSearchFlags.TEXT_ONLY, None)
+            found = cur_iter.forward_search(
+                self.search_str, Gtk.TextSearchFlags.TEXT_ONLY, None
+            )
             if found:
                 match_start, match_end = found
                 self.textbuffer.place_cursor(match_start)
                 mark = self.textbuffer.get_insert()
                 self.scroll_to_mark(mark, 0.4, True, 0.0, 0.2)
                 if self.place_cursor_onscreen():
-                    self.emit('move-cursor', Gtk.MovementStep.LOGICAL_POSITIONS,
-                              index - self.index, False)
+                    self.emit(
+                        "move-cursor",
+                        Gtk.MovementStep.LOGICAL_POSITIONS,
+                        index - self.index,
+                        False,
+                    )
                 self.textbuffer.select_range(match_start, match_end)
                 self.index = index + 1
                 self.last_operation = 1  # Next
@@ -900,7 +908,7 @@ class StyledTextEditor(Gtk.TextView):
                 else:
                     self.prev_b.set_sensitive(True)
         else:
-            context.add_class('error')
+            context.add_class("error")
             self.next_b.set_sensitive(False)
 
     def previous_word_in_text(self, arg1, arg2):
@@ -914,21 +922,26 @@ class StyledTextEditor(Gtk.TextView):
         text_str = self.textbuffer.get_text().get_string()
         self.start_iter = self.textbuffer.get_start_iter()
         context = self.search.get_child().get_style_context()
-        context.remove_class('error')
+        context.remove_class("error")
         index = text_str.rfind(self.search_str, 0, self.index)
         if index != -1:
             mark = self.textbuffer.get_insert()
             _iter = self.textbuffer.get_iter_at_mark(mark)
-            found = _iter.backward_search(self.search_str,
-                                          Gtk.TextSearchFlags.TEXT_ONLY, None)
+            found = _iter.backward_search(
+                self.search_str, Gtk.TextSearchFlags.TEXT_ONLY, None
+            )
             if found:
                 match_start, match_end = found
                 self.textbuffer.place_cursor(match_start)
                 mark = self.textbuffer.get_insert()
                 self.scroll_to_mark(mark, 0.4, True, 0.0, 0.2)
                 if self.place_cursor_onscreen():
-                    self.emit('move-cursor', Gtk.MovementStep.LOGICAL_POSITIONS,
-                              index - self.index, False)
+                    self.emit(
+                        "move-cursor",
+                        Gtk.MovementStep.LOGICAL_POSITIONS,
+                        index - self.index,
+                        False,
+                    )
                 self.textbuffer.select_range(match_start, match_end)
                 self.index = index - 1
                 self.last_operation = 2  # Previous
@@ -939,7 +952,7 @@ class StyledTextEditor(Gtk.TextView):
                 else:
                     self.prev_b.set_sensitive(True)
         else:
-            context.add_class('error')
+            context.add_class("error")
             self.prev_b.set_sensitive(False)
 
     def set_model(self, items):
@@ -948,7 +961,7 @@ class StyledTextEditor(Gtk.TextView):
         """
         model = Gtk.ListStore(GObject.TYPE_STRING)
         for item in items:
-            model.append((item, ))
+            model.append((item,))
         self.search.set_model(model)
 
     def clear_current_search(self, arg1, arg2):
