@@ -101,6 +101,7 @@ class Connection:
         """
         self.log = logging.getLogger(".sqlite")
         self.__connection = sqlite3.connect(*args, **kwargs)
+        self.__connection.execute("PRAGMA cache_size = -128000")
         self.__cursor = self.__connection.cursor()
         self.__connection.create_function("regexp", 2, regexp)
         self.__collations = []
