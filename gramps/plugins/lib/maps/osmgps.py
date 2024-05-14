@@ -169,15 +169,15 @@ class OsmGps:
         """
         Change the current map
         """
-        # if map_type == constants.PERSONAL:
-        #     map_source = config.get("geography.pers# onal-map")
-        #     if map_source == "":
-        #         return
-        #     name = constants.TILES_PATH[map_type]
-        #     self.change_new_map(name, map_source)
-        #     config.set("geography.map_service", map_type)
-        #     self.current_map = map_type
-        #     return
+        if map_type == constants.PERSONAL:
+            map_source = config.get("geography.personal-map")
+            if map_source == "":
+                return
+            name = constants.TILES_PATH[map_type]
+            self.change_new_map(name, map_source)
+            config.set("geography.map_service", map_type)
+            self.current_map = map_type
+            return
         if obj is not None:
             self.osm.layer_remove_all()
             self.osm.image_remove_all()
@@ -201,11 +201,11 @@ class OsmGps:
         if 0:
             self.osm = DummyMapNoGpsPoint()
         else:
-            # if map_type == constants.PERSONAL:
-            #     self.osm = osmgpsmap.Map(repo_uri=map_source)
-            # else:
-            #     self.osm = osmgpsmap.Map(map_source=constants.MAP_TYPE[map_type])
-            self.osm = osmgpsmap.Map(map_source=constants.MAP_TYPE[map_type])
+            if map_type == constants.PERSONAL:
+                self.osm = osmgpsmap.Map(repo_uri=map_source)
+            else:
+                self.osm = osmgpsmap.Map(map_source=constants.MAP_TYPE[map_type])
+            # self.osm = osmgpsmap.Map(map_source=constants.MAP_TYPE[map_type])
             if http_proxy:
                 self.osm.set_property("proxy_uri", http_proxy)
             self.osm.set_property("tile_cache", tiles_path)
@@ -267,11 +267,11 @@ class OsmGps:
             self.osm = DummyMapNoGpsPoint()
         else:
             map_type = int(config.get("geography.map_service"))
-            # if map_type == constants.PERSONAL:
-            #     self.osm = osmgpsmap.Map(repo_uri=map_source)
-            # else:
-            #     self.osm = osmgpsmap.Map(map_source=constants.MAP_TYPE[map_type])
-            self.osm = osmgpsmap.Map(map_source=constants.MAP_TYPE[map_type])
+            if map_type == constants.PERSONAL:
+                self.osm = osmgpsmap.Map(repo_uri=map_source)
+            else:
+                self.osm = osmgpsmap.Map(map_source=constants.MAP_TYPE[map_type])
+            # self.osm = osmgpsmap.Map(map_source=constants.MAP_TYPE[map_type])
             if http_proxy:
                 self.osm.set_property("proxy_uri", http_proxy)
             self.osm.set_property("tile_cache", tiles_path)
