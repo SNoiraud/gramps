@@ -195,7 +195,6 @@ class HeatmapPage(BasePage):
         """Heatmap report class."""
         date = 0
         output_file, sio = self.report.create_file("heatmaps")
-        self.index_fname = output_file.name
         self.uplink = False
         result = self.write_header(self._("Heatmaps"))
         indlistpage, dummy_head, dummy_body, outerwrapper = result
