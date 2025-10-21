@@ -2174,6 +2174,21 @@ class GrampsPreferences(ConfigureDialog):
         )
 
         row += 1
+        # Default Citation Confidence
+        cbox = Gtk.ComboBoxText()
+        confidence = [_("Very Low"), _("Low"), _("Normal"), _("High"), _("Very High")]
+
+        list(map(cbox.append_text, confidence))
+        cbox.set_active(config.get("preferences.confidence"))
+        cbox.connect(
+            "changed",
+            lambda obj: config.set("preferences.confidence", obj.get_active()),
+        )
+        lwidget = BasicLabel(_("%s: ") % _("Default Citation confidence"))
+        grid.attach(lwidget, 0, row, 1, 1)
+        grid.attach(cbox, 1, row, 2, 1)
+
+        row += 1
         # height multiple surname table
         self.add_pos_int_entry(
             grid,
@@ -2187,6 +2202,16 @@ class GrampsPreferences(ConfigureDialog):
                 " entered, these names display in a box. This"
                 " setting sets the size of this box."
             ),
+        )
+
+        row += 1
+        # Maximum visible length of a note in characters.
+        self.add_spinner(
+            grid,
+            _("Note preview length"),
+            row,
+            "interface.note-preview-length",
+            (80, 2000),
         )
 
         row += 1

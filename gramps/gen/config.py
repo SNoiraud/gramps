@@ -274,6 +274,7 @@ register("interface.toolbar-tools", True)
 register("interface.view", True)
 register("interface.surname-box-height", 150)
 register("interface.treemodel-cache-size", 1000)
+register("interface.note-preview-length", 80)
 
 register("paths.recent-export-dir", USER_HOME)
 register("paths.recent-file", "")
@@ -332,6 +333,7 @@ register("preferences.age-display-precision", 1)
 register("preferences.age-after-death", True)
 register("preferences.age-rounded-year", True)
 register("preferences.cite-plugin", "cite-legacy")
+register("preferences.confidence", 2)  # citation.CONF_NORMAL
 
 register("colors.scheme", 0)
 register("colors.male-alive", ["#b8cee6", "#1f344a"])

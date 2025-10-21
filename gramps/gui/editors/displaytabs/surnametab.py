@@ -147,7 +147,7 @@ class SurnameTab(EmbeddedList):
         column = Gtk.TreeViewColumn(name, renderer, text=self._column_combo[3])
         column.set_resizable(True)
         column.set_sort_column_id(self._column_combo[1])
-        column.set_min_width(self._column_combo[2])
+        # column.set_min_width(self._column_combo[2])
         column.set_expand(False)
         self.columns.append(column)
         self.tree.append_column(column)
