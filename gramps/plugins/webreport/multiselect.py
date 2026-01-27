@@ -220,8 +220,8 @@ class HeatmapSurnamesMultiTreeView(MultiTreeView):
         # Fill columns with data
         index = 1
         for item in sorted(data, key=lambda x: x[1], reverse=True):
-            if index > 10:  # Show only the 10 largest group of people
-                break
+            # if index > 10:  # Show only the 10 largest group of people
+            #     break
             model.append([False, item[0] + " (" + str(item[1]) + ")"])
             index += 1
 
