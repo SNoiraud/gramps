@@ -208,6 +208,7 @@ class EditDate(ManagedWindow):
         if self.date.is_empty():
             cal = config.get("preferences.calendar-format-input")
             self.calendar_box.set_active(cal)
+            self.type_box.set_active(0)
 
         # The dialog is modal -- since dates don't have names, we don't
         # want to have several open dialogs, since then the user will
